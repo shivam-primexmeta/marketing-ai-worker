@@ -9,13 +9,13 @@ const supabase = createClient(config.supabaseUrl, config.supabaseServiceKey);
  * @returns {Promise<Array>} A list of pending email jobs.
  */
 async function getPendingEmails() {
+    // THE FIX: The .select() query is updated to correctly join through the campaigns table.
     const { data, error } = await supabase
         .from('email_sending_log')
         .select(`
             *,
-            campaign:campaigns(*),
             contact:contacts(id, email, company_name, company_url),
-            template:templates(subject, body)
+            campaign:campaigns(*, template:templates(subject, body))
         `)
         .eq('status', 'pending')
         .order('created_at', { ascending: true })
