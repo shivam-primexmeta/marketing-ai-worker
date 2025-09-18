@@ -21,12 +21,15 @@ async function processEmailQueue() {
         console.log(`[${new Date().toISOString()}] Found ${pendingEmails.length} pending emails to process.`);
 
         for (const job of pendingEmails) {
+            // THE FIX: The template is nested inside the campaign object.
+            // We need to access it correctly and add a check.
             const { campaign, contact } = job;
+            const template = campaign?.template; // Access template through the campaign
 
-            // Validate that we have all the necessary data before proceeding
-            if (!campaign || !contact) {
+            // Validate that we have all the necessary nested data before proceeding
+            if (!campaign || !contact || !template) {
                 console.error(`   - Skipping job ${job.id} due to missing related data.`);
-                await supabaseService.updateEmailLogStatus(job.id, 'failed', 'Missing campaign or contact data');
+                await supabaseService.updateEmailLogStatus(job.id, 'failed', 'Missing campaign, contact, or template data');
                 continue;
             }
 
@@ -39,7 +42,8 @@ async function processEmailQueue() {
             await sleep(randomDelay);
 
             try {
-                await resendService.sendPersonalizedEmail(job);
+                // Pass the whole job object to the send service
+                await resendService.sendPersonalizedEmail({ contact, template, campaign });
                 await supabaseService.updateEmailLogStatus(job.id, 'sent');
                 console.log(`   - Email sent to ${contact.email}`);
             } catch (sendError) {
