@@ -9,12 +9,12 @@ const supabase = createClient(config.supabaseUrl, config.supabaseServiceKey);
  * @returns {Promise<Array>} A list of pending email jobs.
  */
 async function getPendingEmails() {
-    
+    // THE UPDATE: We've added 'phone_number' to the select query for the contact.
     const { data, error } = await supabase
         .from('email_sending_log')
         .select(`
             *,
-            contact:contacts(id, email, company_name, company_url),
+            contact:contacts(id, email, company_name, company_url, phone_number),
             campaign:campaigns(*, template:templates(subject, body))
         `)
         .eq('status', 'pending')
